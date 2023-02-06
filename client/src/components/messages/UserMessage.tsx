@@ -6,7 +6,6 @@ import React from 'react';
 import Theme from '../../theme';
 
 type Props = {
-  clientName: string;
   message: string;
 };
 
@@ -33,13 +32,13 @@ const useStyles = makeStyles((theme: typeof Theme) => ({
   },
 }));
 
-const UserMessage: React.FC<Props> = ({clientName, message}) => {
+const UserMessage: React.FC<Props> = ({message}) => {
   const classes = useStyles();
 
   return (
     <div className={classes.messageRow}>
       <div className={classes.messageContainer}>
-        <Typography variant="subtitle2">{clientName}</Typography>
+        <Typography variant="subtitle2">You</Typography>
         <div className={classes.messageBubble}>{message}</div>
       </div>
       <Avatar variant="rounded">

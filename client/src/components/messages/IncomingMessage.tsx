@@ -19,6 +19,7 @@ const useStyles = makeStyles((theme: typeof Theme) => ({
     display: 'flex',
     width: '75%',
     flexDirection: 'column',
+    alignItems: 'flex-start',
     marginLeft: theme.spacing(2),
   },
   messageBubble: {

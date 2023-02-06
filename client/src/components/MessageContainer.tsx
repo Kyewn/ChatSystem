@@ -6,41 +6,25 @@ import IncomingMessage from './messages/IncomingMessage';
 import UserMessage from './messages/UserMessage';
 import SystemMessage from './messages/SystemMessage';
 
+type Props = {
+  renderMessages: () => JSX.Element[];
+};
+
 const useStyles = makeStyles((theme: typeof Theme) => ({
   container: {
     border: `2px solid ${theme.palette.primary.main}`,
     borderRadius: '5px',
     width: '75%',
     height: '75%',
-    overflowY: 'scroll',
+    overflowY: 'auto',
     marginBottom: theme.spacing(2),
   },
 }));
 
-const MessageContainer: React.FC = () => {
+const MessageContainer: React.FC<Props> = ({renderMessages}) => {
   const classes = useStyles();
 
-  return (
-    <Container className={classes.container}>
-      <IncomingMessage
-        clientName="asd"
-        message="asdaasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdsd"
-      />
-      <UserMessage
-        clientName="asd"
-        message="asdaasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdsd"
-      />
-      <SystemMessage message="asdaasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdsd" />
-      <UserMessage
-        clientName="asd"
-        message="asdaasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdsd"
-      />{' '}
-      <IncomingMessage
-        clientName="asd"
-        message="asdaasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdasdsd"
-      />
-    </Container>
-  );
+  return <Container className={classes.container}>{renderMessages()}</Container>;
 };
 
 export default MessageContainer;
