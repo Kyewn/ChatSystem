@@ -6,7 +6,7 @@ const PORT = Number.parseInt(process.env.PORT as string) || 3535;
 const socketServer = new Server(PORT, {
   cors: {
     // FIXME: Dummy URL that cannot be used for cloud hosting
-    origin: `https://chat-system-k87lz9vgd-oowu.vercel.app/`,
+    origin: `https://chat-system-oowu.vercel.app/`,
   },
 });
 
