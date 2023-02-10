@@ -1,5 +1,5 @@
-import {useCallback, useState} from 'react';
-import {Message} from '../../types';
+import {useState} from 'react';
+import {Message} from '../types';
 import MessageInput from './components/MessageInput';
 import MessageContainer from './components/MessageContainer';
 import makeStyles from '@mui/styles/makeStyles';
@@ -11,7 +11,7 @@ import SystemMessage from './components/messages/SystemMessage';
 import Lobby from './components/Lobby';
 
 //FIXME: Not valid IP when host on cloud
-const socket = io('http://oowucomputer.com:3535');
+const socket = io('https://chat-system-cat3053.as.r.appspot.com');
 
 const useStyles = makeStyles(() => ({
   app: {
