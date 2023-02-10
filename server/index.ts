@@ -1,10 +1,12 @@
 import {Server} from 'socket.io';
-import {Message} from '../types';
+import {Message} from './types';
 
-const socketServer = new Server(3535, {
+const PORT = Number.parseInt(process.env.PORT as string) || 3535;
+
+const socketServer = new Server(PORT, {
   cors: {
     // FIXME: Dummy URL that cannot be used for cloud hosting
-    origin: 'http://oowucomputer.com:23733',
+    origin: `https://chat-system-k87lz9vgd-oowu.vercel.app/`,
   },
 });
 
