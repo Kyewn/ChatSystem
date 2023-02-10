@@ -1,7 +1,7 @@
 import React, {MouseEvent, KeyboardEvent, useState} from 'react';
 import {Button, TextField} from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
-import {Message} from '../../../types';
+import {Message} from '../../types';
 import Theme from '../theme';
 import {SocketContext} from '../../context';
 
