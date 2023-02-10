@@ -12,7 +12,10 @@ const messageCache: Message[] = [];
 const maxMessageCache = 5;
 
 socketServer.on('connection', (socket) => {
-  socketServer.emit('join', socket.id, messageCache);
+  socket.on('setName', (name: string) => {
+    socketServer.emit('join', {id: socket.id, name, messageCache});
+  });
+
   socket.on('send', (message: Message) => {
     if (messageCache.length === maxMessageCache) {
       messageCache.shift();

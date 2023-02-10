@@ -8,6 +8,7 @@ import IncomingMessage from './components/messages/IncomingMessage';
 import UserMessage from './components/messages/UserMessage';
 import {SocketContext} from '../context';
 import SystemMessage from './components/messages/SystemMessage';
+import Lobby from './components/Lobby';
 
 //FIXME: Not valid IP when host on cloud
 const socket = io('http://oowucomputer.com:3535');
@@ -25,15 +26,24 @@ const useStyles = makeStyles(() => ({
 
 const App = () => {
   const classes = useStyles();
+  const [clientName, setClientName] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isInLobby, setIsInLobby] = useState(true);
 
   const handleSend = (message: Message) => {
     setMessages((messages) => [...messages, message]);
     socket.emit('send', message);
   };
 
-  const handleJoin = (id: string, messageCache: Message[]) => {
-    const systemMessage = {content: `Client ${id} ${socket.id === id ? '(You)' : ''} has joined the room.`};
+  const handleJoinRoom = (name: string) => {
+    setClientName(name);
+    setIsInLobby(false);
+    socket.emit('setName', name);
+  };
+
+  const handleJoin = (clientInfo: {id: string; name: string; messageCache: Message[]}) => {
+    const {id, name, messageCache} = clientInfo;
+    const systemMessage = {content: `${name} ${socket.id === id ? '(You)' : ''} has joined the room.`};
     if (socket.id === id) {
       setMessages([...messageCache, systemMessage]);
     } else {
@@ -57,18 +67,19 @@ const App = () => {
         return <UserMessage message={message.content} />;
       }
 
-      if (!message.id) {
+      if (!message.id && !message.name) {
         return <SystemMessage message={message.content} />;
       }
 
-      return <IncomingMessage clientName={message.id} message={message.content} />;
+      return <IncomingMessage clientName={message.name || ''} message={message.content} />;
     });
 
   return (
     <SocketContext.Provider value={socket}>
       <div className={classes.app}>
+        <Lobby visible={isInLobby} handleJoinRoom={handleJoinRoom} />
         <MessageContainer renderMessages={renderMessages} />
-        <MessageInput handleSend={handleSend} />
+        <MessageInput clientName={clientName} handleSend={handleSend} />
       </div>
     </SocketContext.Provider>
   );
