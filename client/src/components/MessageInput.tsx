@@ -3,7 +3,7 @@ import {Button, TextField} from '@mui/material';
 import makeStyles from '@mui/styles/makeStyles';
 import {Message} from '../../types';
 import Theme from '../theme';
-import {SocketContext} from '../../context';
+import {AblyContext} from '../../context';
 
 type Props = {
   clientName: string;
@@ -53,8 +53,8 @@ const MessageInput: React.FC<Props> = ({clientName, handleSend}) => {
   };
 
   return (
-    <SocketContext.Consumer>
-      {(socket) => (
+    <AblyContext.Consumer>
+      {(ably) => (
         <div className={classes.inputContainer}>
           <TextField
             value={input}
@@ -63,18 +63,20 @@ const MessageInput: React.FC<Props> = ({clientName, handleSend}) => {
             onChange={(e) => {
               setInput(e.target.value);
             }}
-            onKeyDown={(e) => handleKeyDown(e, {id: socket.id, name: clientName, content: input})}
+            onKeyDown={(e) => {
+              handleKeyDown(e, {id: ably.auth.clientId, name: clientName, content: input});
+            }}
           />
           <Button
             variant="contained"
             className={classes.sendButton}
-            onClick={(e) => handleClick(e, {id: socket.id, name: clientName, content: input})}
+            onClick={(e) => handleClick(e, {id: ably.auth.clientId, name: clientName, content: input})}
           >
             Send
           </Button>
         </div>
       )}
-    </SocketContext.Consumer>
+    </AblyContext.Consumer>
   );
 };
 

@@ -1,17 +1,29 @@
-import {useState} from 'react';
+import {LegacyRef, useEffect, useRef, useState} from 'react';
 import {Message} from '../types';
 import MessageInput from './components/MessageInput';
 import MessageContainer from './components/MessageContainer';
 import makeStyles from '@mui/styles/makeStyles';
-import {io} from 'socket.io-client';
 import IncomingMessage from './components/messages/IncomingMessage';
 import UserMessage from './components/messages/UserMessage';
-import {SocketContext} from '../context';
 import SystemMessage from './components/messages/SystemMessage';
 import Lobby from './components/Lobby';
+import {configureAbly, useChannel, usePresence} from '@ably-labs/react-hooks';
+import {v4 as uuidv4} from 'uuid';
+import {AblyContext} from '../context';
 
-//FIXME: Not valid IP when host on cloud
-const socket = io('https://chat-system-cat3053.as.r.appspot.com');
+const clientId = uuidv4();
+
+configureAbly({authUrl: '/api/createTokenRequest', clientId});
+
+type ClientInfo = {
+  id: string;
+  name: string;
+};
+
+type ClientPresence = {
+  name: string;
+  status: string;
+};
 
 const useStyles = makeStyles(() => ({
   app: {
@@ -26,62 +38,94 @@ const useStyles = makeStyles(() => ({
 
 const App = () => {
   const classes = useStyles();
-  const [clientName, setClientName] = useState('');
+  const [clientInfo, setClientInfo] = useState<ClientInfo>();
   const [messages, setMessages] = useState<Message[]>([]);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const [isInLobby, setIsInLobby] = useState(true);
 
+  const handleReceiveMessage = (message: {data: Message}) => {
+    setMessages((messages) => [...messages, message.data]);
+  };
+
+  const [channel, ably] = useChannel('main', handleReceiveMessage);
+  const [presence, setPresence] = usePresence<ClientPresence>('main', {name: '', status: ''});
+
   const handleSend = (message: Message) => {
-    setMessages((messages) => [...messages, message]);
-    socket.emit('send', message);
+    channel.publish({data: message});
   };
 
   const handleJoinRoom = (name: string) => {
-    setClientName(name);
-    setIsInLobby(false);
-    socket.emit('setName', name);
-  };
+    const existingName = presence.find((client) => client.data.name === name);
 
-  const handleJoin = (clientInfo: {id: string; name: string; messageCache: Message[]}) => {
-    const {id, name, messageCache} = clientInfo;
-    const systemMessage = {content: `${name} ${socket.id === id ? '(You)' : ''} has joined the room.`};
-    if (socket.id === id) {
-      setMessages([...messageCache, systemMessage]);
-    } else {
-      setMessages((messages) => [...messages, systemMessage]);
+    if (existingName) {
+      throw new Error();
     }
+
+    setClientInfo({id: clientId, name});
+    setIsInLobby(false);
+    setPresence({name, status: 'connected'});
   };
 
-  const handleReceiveMessage = (message: Message) => {
-    setMessages((messages) => [...messages, message]);
+  const renderMessages = () => {
+    return [
+      ...messages.map((message) => {
+        if (!message.name) {
+          return <SystemMessage message={message.content} />;
+        }
+
+        if (message.id === clientInfo?.id) {
+          return <UserMessage message={message.content} />;
+        }
+
+        return <IncomingMessage clientName={message.name || ''} message={message.content} />;
+      }),
+      <div ref={lastMessageRef}></div>,
+    ];
   };
 
-  // socket.off removes listener before .on adds the listener back
-  // Prevent adding multiple listeners which result in multiple callbacks
-  socket.off('join').on('join', handleJoin);
-
-  socket.off('receiveMessage').on('receiveMessage', handleReceiveMessage);
-
-  const renderMessages = () =>
-    messages.map((message) => {
-      if (message.id === socket.id) {
-        return <UserMessage message={message.content} />;
+  // Initial setup
+  useEffect(() => {
+    channel.history({limit: 10}, (err, history) => {
+      if (history?.items) {
+        const originalHistory = history.items.filter((item) => !!item.data.name).slice(0, 5);
+        const parsedHistory = originalHistory.reverse();
+        const parsedItems = parsedHistory.map((message) => message.data);
+        setMessages((prev) => [...prev, ...parsedItems]);
       }
-
-      if (!message.id && !message.name) {
-        return <SystemMessage message={message.content} />;
-      }
-
-      return <IncomingMessage clientName={message.name || ''} message={message.content} />;
     });
 
+    channel.presence.subscribe('leave', (presence) => {
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {id: presence.clientId, content: `${presence.data.name} has left the room.`},
+      ]);
+    });
+  }, []);
+
+  // Presence change on join
+  useEffect(() => {
+    const clientPresence = presence.find((pres) => pres.clientId === clientId);
+    const clientStatus = clientPresence?.data.status;
+
+    if (clientStatus === 'connected') {
+      handleSend({id: clientId, content: `${clientInfo?.name} has joined the room.`});
+      setPresence({name: clientInfo?.name as string, status: 'joined'});
+      return;
+    }
+  }, [presence]);
+
+  useEffect(() => {
+    lastMessageRef.current?.scrollIntoView({behavior: 'smooth'});
+  }, [messages]);
+
   return (
-    <SocketContext.Provider value={socket}>
+    <AblyContext.Provider value={ably}>
       <div className={classes.app}>
         <Lobby visible={isInLobby} handleJoinRoom={handleJoinRoom} />
         <MessageContainer renderMessages={renderMessages} />
-        <MessageInput clientName={clientName} handleSend={handleSend} />
+        <MessageInput clientName={clientInfo?.name as string} handleSend={handleSend} />
       </div>
-    </SocketContext.Provider>
+    </AblyContext.Provider>
   );
 };
 

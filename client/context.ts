@@ -1,3 +1,4 @@
+import {Realtime} from '@ably-labs/react-hooks';
 import {createContext} from 'react';
 
-export const SocketContext = createContext({id: ''});
+export const AblyContext = createContext({} as Realtime);

@@ -10,6 +10,8 @@ type Props = {
   handleJoinRoom: (name: string) => void;
 };
 
+type ErrorType = '' | 'emptyInput' | 'nameExisted';
+
 const useStyles = makeStyles((theme: typeof Theme) => ({
   container: {
     position: 'absolute',
@@ -61,15 +63,19 @@ const useStyles = makeStyles((theme: typeof Theme) => ({
 const Lobby: React.FC<Props> = ({visible, handleJoinRoom}) => {
   const classes = useStyles();
   const [name, setName] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<ErrorType>('');
 
   const joinRoom = (name: string) => {
     if (!name) {
-      setError(true);
+      setError('emptyInput');
       return;
     }
-    setError(false);
-    handleJoinRoom(name);
+    setError('');
+    try {
+      handleJoinRoom(name);
+    } catch {
+      setError('nameExisted');
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>, name: string) => {
@@ -94,7 +100,14 @@ const Lobby: React.FC<Props> = ({visible, handleJoinRoom}) => {
             Join
           </Button>
         </div>
-        {error && <Typography className={classes.errorLabel}>No username provided!</Typography>}
+        {!!error &&
+          (error === 'nameExisted' ? (
+            <Typography className={classes.errorLabel}>
+              Someone is already using that name, please choose a new name.
+            </Typography>
+          ) : (
+            <Typography className={classes.errorLabel}>No username provided!</Typography>
+          ))}
       </Container>
     </Slide>
   );
