@@ -1,4 +1,4 @@
-import {LegacyRef, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Message} from '../types';
 import MessageInput from './components/MessageInput';
 import MessageContainer from './components/MessageContainer';
@@ -10,6 +10,12 @@ import Lobby from './components/Lobby';
 import {configureAbly, useChannel, usePresence} from '@ably-labs/react-hooks';
 import {v4 as uuidv4} from 'uuid';
 import {AblyContext} from '../context';
+import UserList from './components/UserList';
+
+/**TODO:
+ * - Show client connection start time (create a user list)
+ * - Maybe need to abstract ably server to serverless function to separate client-server ?
+ * */
 
 const clientId = uuidv4();
 
@@ -95,9 +101,17 @@ const App = () => {
     });
 
     channel.presence.subscribe('leave', (presence) => {
+      const connectedDate = new Date(presence.timestamp);
+      const isAfternoon = connectedDate.getHours() >= 12;
+
       setMessages((prevMessages) => [
         ...prevMessages,
-        {id: presence.clientId, content: `${presence.data.name} has left the room.`},
+        {
+          id: presence.clientId,
+          content: `${presence.data.name} has left the room at ${
+            !(connectedDate.getHours() % 12) ? 12 : connectedDate.getHours() % 12
+          }:${String(connectedDate.getMinutes()).padStart(2, '0')} ${isAfternoon ? 'PM' : 'AM'}.`,
+        },
       ]);
     });
   }, []);
@@ -106,9 +120,16 @@ const App = () => {
   useEffect(() => {
     const clientPresence = presence.find((pres) => pres.clientId === clientId);
     const clientStatus = clientPresence?.data.status;
+    const connectedDate = new Date(clientPresence?.timestamp as number);
+    const isAfternoon = connectedDate.getHours() >= 12;
 
     if (clientStatus === 'connected') {
-      handleSend({id: clientId, content: `${clientInfo?.name} has joined the room.`});
+      handleSend({
+        id: clientId,
+        content: `${clientInfo?.name} has joined the room at ${
+          !(connectedDate.getHours() % 12) ? 12 : connectedDate.getHours() % 12
+        }:${String(connectedDate.getMinutes()).padStart(2, '0')} ${isAfternoon ? 'PM' : 'AM'}.`,
+      });
       setPresence({name: clientInfo?.name as string, status: 'joined'});
       return;
     }
@@ -121,6 +142,7 @@ const App = () => {
   return (
     <AblyContext.Provider value={ably}>
       <div className={classes.app}>
+        <UserList presences={presence} />
         <Lobby visible={isInLobby} handleJoinRoom={handleJoinRoom} />
         <MessageContainer renderMessages={renderMessages} />
         <MessageInput clientName={clientInfo?.name as string} handleSend={handleSend} />
