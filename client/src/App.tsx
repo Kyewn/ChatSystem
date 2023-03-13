@@ -128,7 +128,9 @@ const App = () => {
         id: clientId,
         content: `${clientInfo?.name} has joined the room at ${
           !(connectedDate.getHours() % 12) ? 12 : connectedDate.getHours() % 12
-        }:${String(connectedDate.getMinutes()).padStart(2, '0')} ${isAfternoon ? 'PM' : 'AM'}.`,
+        }:${String(connectedDate.getMinutes()).padStart(2, '0')} ${
+          isAfternoon ? 'PM' : 'AM'
+        }. Welcome to the chatroom!`,
       });
       setPresence({name: clientInfo?.name as string, status: 'joined'});
       return;
